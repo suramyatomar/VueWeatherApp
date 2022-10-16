@@ -1,0 +1,123 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Weather App</title>
+  <link rel="stylesheet" href="style.css" type="text/css" />
+
+<script>
+  // This calls the Backend server to get the data and assign it to the correct variables
+  function LoadWeatherData()
+  {
+        var xmlhttp = new XMLHttpRequest();
+        xmlhttp.onreadystatechange = function()
+        {
+          if (this.status == 200) // Didn't get any error while calling the backend
+          {
+            if (this.responseText != "")
+            {
+              const obj = JSON.parse(this.responseText);
+              document.getElementById("date").innerHTML = new Date().toISOString().slice(0, 10);
+              document.getElementById("temp_c").innerHTML = obj.temp + "\u00B0C | " + obj.weather;
+              document.getElementById("temp_f").innerHTML = (obj.temp * 9 / 5 + 32) + "\u00B0F | " + obj.weather;
+              document.getElementById("location").innerHTML = obj.location;
+
+              document.getElementById("humidity").innerHTML = "Humidity: " + obj.humidity +"%";
+              document.getElementById("sunrise").innerHTML = "Sunrise: " + new Date (obj.sunrise*1000).toLocaleString();
+              document.getElementById("sunset").innerHTML = "Sunrise: " + new Date (obj.sunset*1000).toLocaleString();
+              document.getElementById("wind").innerHTML = "Wind: " + obj.wind + "M/S";
+              document.getElementById("temp_f").style.display = "none";
+              localStorage.Weather=this.responseText;
+            }
+
+          }
+        }
+        xmlhttp.open("GET", "FetchWeatherData.php", true);
+        xmlhttp.send();
+
+  }
+
+// Since We don't want to hammer the API We only get updated info
+// every 5 mins instead of every refresh
+
+  function CheckCaching()
+  {
+    if(!localStorage.ToRefresh)   // Fresh load of page
+    {
+        localStorage.ToRefresh = Date.now() + 300000; // Set Expiry for 5 Minutes
+        LoadWeatherData();
+    }
+    else if (localStorage.ToRefresh < Date.now())   // Its been more than 5 mins since last refresh
+    {
+      localStorage.ToRefresh = Date.now() + 300000; // Set Expiry for 5 Minutes
+      LoadWeatherData();
+    }
+    else          // Still less than 5 mins from refresh so use the cache
+    {
+      InputString = localStorage.Weather;
+      const obj = JSON.parse(InputString);
+      document.getElementById("date").innerHTML = new Date().toISOString().slice(0, 10);
+      document.getElementById("temp_c").innerHTML = obj.temp + "\u00B0C | " + obj.weather;
+      document.getElementById("temp_f").innerHTML = (obj.temp * 9 / 5 + 32) + "\u00B0F | " + obj.weather;
+      document.getElementById("location").innerHTML = obj.location;
+      document.getElementById("humidity").innerHTML = "Humidity: " + obj.humidity +"%";
+
+      // Since we only want the Hours and Min, doing a little javascript time magic
+
+      const sunrise_t = new Date(obj.sunrise*1000).toLocaleTimeString({hour: '2-digit',minute: '2-digit',});
+      const sunset_t = new Date(obj.sunset*1000).toLocaleTimeString({hour: '2-digit',minute: '2-digit',});
+
+      document.getElementById("sunrise").innerHTML = "Sunrise: " + sunrise_t;
+      document.getElementById("sunset").innerHTML = "Sunset: " + sunset_t;
+      document.getElementById("wind").innerHTML = "Wind: " + obj.wind + "M/S";
+      document.getElementById("temp_f").style.display = "none";
+    }
+  }
+
+// Toggle Between Celcius and Fahrenheit
+  function toggle_CtoF()
+  {
+    var temp_c = document.getElementById("temp_c");
+    var temp_f = document.getElementById("temp_f");
+
+    if (temp_c.style.display === "none")
+    {
+      temp_c.style.display = "block";
+      temp_f.style.display = "none";
+    }
+    else
+    {
+      temp_c.style.display = "none";
+      temp_f.style.display = "block";
+    }
+  }
+</script>
+</head>
+
+
+<body onload="CheckCaching()">
+
+  <div class="weather-container">
+    <div class="weather-wrap">
+      <div class="heading">
+        Current Weather
+          <div id="temp_c" class="temp"> </div>
+          <div id="temp_f" class="temp"> </div>
+        <div class="location-box">
+          <div id="location" class="location">     </div>
+          <div id="date" class="date"></div>
+        </div>
+          <div id="humidity" class="weather"></div>
+          <div id="wind" class="weather"></div>
+          <div id="sunrise" class="weather"></div>
+          <div id="sunset" class="weather"></div>
+
+            <button onclick="toggle_CtoF()" class="button">Toggle C/F</button>
+      </div>
+    </div>
+</div>
+
+
+
+</body>
+</html>
